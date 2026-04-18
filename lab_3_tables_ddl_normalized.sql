@@ -57,7 +57,8 @@ CREATE TABLE auth.clients (
         FOREIGN KEY (id)
         REFERENCES auth.users (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT ck_clients_balance_min CHECK (balance >= 0.00)
 );
 
 CREATE TABLE auth.employees (
@@ -70,7 +71,8 @@ CREATE TABLE auth.employees (
         REFERENCES auth.users (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    CONSTRAINT uq_employees_phone UNIQUE (phone)
+    CONSTRAINT uq_employees_phone UNIQUE (phone),
+    CONSTRAINT ck_employees_birth_date_in_the_past CHECK (birth_date < CURRENT_DATE)
 );
 
 CREATE TABLE auth.admins (
@@ -90,6 +92,7 @@ CREATE TABLE sales.shopping_carts (
     client_id BIGINT NOT NULL,
     CONSTRAINT pk_shopping_carts PRIMARY KEY (id),
     CONSTRAINT uq_shopping_carts_public_id UNIQUE (public_id),
+    CONSTRAINT ck_shopping_carts_total_amount_min CHECK (total_amount >= 0.00),
     CONSTRAINT fk_shopping_carts_clients
         FOREIGN KEY (client_id)
         REFERENCES auth.clients (id)
@@ -110,6 +113,8 @@ CREATE TABLE book.books (
     CONSTRAINT pk_books PRIMARY KEY (id),
     CONSTRAINT uq_books_public_id UNIQUE (public_id),
     CONSTRAINT ck_books_name_min_length CHECK (LENGTH(name) > 1),
+    CONSTRAINT ck_books_price_min CHECK (price >= 0.00),
+    CONSTRAINT ck_books_number_of_pages_min CHECK (number_of_pages >= 0),
     CONSTRAINT ck_books_publication_date_past CHECK (publication_date <= CURRENT_DATE)
 );
 
@@ -119,7 +124,9 @@ CREATE TABLE book.characteristics (
     slug VARCHAR(255) NOT NULL,
     CONSTRAINT pk_characteristics PRIMARY KEY (id),
     CONSTRAINT uq_characteristics_name UNIQUE (name),
-    CONSTRAINT uq_characteristics_slug UNIQUE (slug)
+    CONSTRAINT ck_characteristics_name_min_length CHECK (LENGTH(name) > 1),
+    CONSTRAINT uq_characteristics_slug UNIQUE (slug),
+    CONSTRAINT ck_characteristics_slug_min_length CHECK (LENGTH(slug) > 1)
 );
 
 CREATE TABLE book.books_characteristics (
@@ -146,7 +153,10 @@ CREATE TABLE book.authors (
     birth_date DATE,
     CONSTRAINT pk_authors PRIMARY KEY (id),
     CONSTRAINT uq_authors_name UNIQUE (name),
-    CONSTRAINT uq_authors_slug UNIQUE (slug)
+    CONSTRAINT ck_authors_name_min_length CHECK (LENGTH(name) > 1),
+    CONSTRAINT uq_authors_slug UNIQUE (slug),
+    CONSTRAINT ck_authors_slug_min_length CHECK (LENGTH(slug) > 1),
+    CONSTRAINT ck_authors_birth_date_in_the_past CHECK (birth_date < CURRENT_DATE)
 );
 
 CREATE TABLE book.books_authors (
@@ -172,7 +182,9 @@ CREATE TABLE book.genres (
     description TEXT,
     CONSTRAINT pk_genres PRIMARY KEY (id),
     CONSTRAINT uq_genres_name UNIQUE (name),
-    CONSTRAINT uq_genres_slug UNIQUE (slug)
+    CONSTRAINT ck_genres_name_min_length CHECK (LENGTH(name) > 1),
+    CONSTRAINT uq_genres_slug UNIQUE (slug),
+    CONSTRAINT ck_genres_slug_min_length CHECK (LENGTH(slug) > 1)
 );
 
 CREATE TABLE book.books_genres (
@@ -210,7 +222,10 @@ CREATE TABLE sales.shopping_cart_items (
         FOREIGN KEY (book_id)
         REFERENCES book.books (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT ck_shopping_cart_items_quantity_min CHECK (quantity >= 0),
+    CONSTRAINT ck_shopping_cart_items_price_at_add_min CHECK (price_at_add >= 0.00),
+    CONSTRAINT ck_shopping_cart_items_subtotal_min CHECK (subtotal >= 0.00)
 );
 
 CREATE TABLE sales.orders (
@@ -236,7 +251,8 @@ CREATE TABLE sales.orders (
         FOREIGN KEY (employee_id)
         REFERENCES auth.employees (id)
         ON DELETE SET NULL
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT ck_orders_order_date_in_the_past CHECK (order_date <= NOW())
 );
 
 CREATE TABLE sales.order_cancellations (
@@ -256,7 +272,8 @@ CREATE TABLE sales.order_cancellations (
         FOREIGN KEY (order_id)
         REFERENCES sales.orders (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT ck_order_cancellations_cancelled_at_in_the_past CHECK (cancelled_at <= NOW())
 );
 
 CREATE TABLE sales.order_items (
@@ -272,5 +289,9 @@ CREATE TABLE sales.order_items (
         FOREIGN KEY (order_id)
         REFERENCES sales.orders (id)
         ON DELETE CASCADE
-        ON UPDATE CASCADE
+        ON UPDATE CASCADE,
+    CONSTRAINT ck_order_items_book_name_min_length CHECK (LENGTH(book_name) > 1),
+    CONSTRAINT ck_order_items_price_at_purchase_min CHECK (price_at_purchase >= 0.00),
+    CONSTRAINT ck_order_items_quantity_min CHECK (quantity >= 0),
+    CONSTRAINT ck_order_items_subtotal_min CHECK (subtotal >= 0.00)
 );
